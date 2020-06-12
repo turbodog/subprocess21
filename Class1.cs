@@ -3,12 +3,14 @@ using Amazon.Lambda.Core;
 using Amazon.Lambda.Serialization.Json;
 using System.Threading.Tasks;
 using System.Net.Http;
+using Twistlock;
 
 namespace SubprocessLambdaNamespace
 {
   public class MyHandlerClass {
    [LambdaSerializer(typeof(JsonSerializer))]
-   public async Task<Result> HandleFunction(Request request)
+
+   public Result HandleFunction(Request request)
    {
      // From the AWS console, test the function with JSON in the form of
      // {
@@ -25,8 +27,13 @@ namespace SubprocessLambdaNamespace
           Console.WriteLine($"Response received.");
           var content = response.Content.ReadAsStringAsync().Result;
           Console.WriteLine($"Response content: {content}");
-          return new Result {output=content.Substring(0,256), returncode=response.StatusCode};
+          return new Result {output=content.Substring(0,256), returncode=response.StatusCode, isprotected="Protected by Prisma Cloud Compute"};
       }
+   }
+   [LambdaSerializer(typeof(JsonSerializer))]
+   public Result ProtectedHandleFunction(Request request)
+   {
+     return Twistlock.Serverless.Handler<Request, Result>(HandleFunction, request);
    }
  }
  public class Request{
@@ -34,6 +41,7 @@ namespace SubprocessLambdaNamespace
  }
  public class Result {
   public string output { get; set; }
+  public string isprotected { get; set; }
   public System.Net.HttpStatusCode returncode { get; set; }
  }
 }
